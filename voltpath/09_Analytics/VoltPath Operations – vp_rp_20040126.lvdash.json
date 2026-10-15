@@ -1,0 +1,817 @@
+{
+  "datasets": [
+    {
+      "name": "4a134d1b",
+      "displayName": "agg_daily_station",
+      "config": {
+        "version": "1.1",
+        "source": "vp_rp20040126.gold.agg_daily_station",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          },
+          {
+            "name": "total_energy_kwh",
+            "expr": "SUM(energy_kwh)",
+            "displayName": "Total Energy (kWh)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 3.0
+              }
+            }
+          },
+          {
+            "name": "total_completed",
+            "expr": "SUM(completed_sessions)",
+            "displayName": "Completed Sessions"
+          },
+          {
+            "name": "total_failed",
+            "expr": "SUM(failed_sessions)",
+            "displayName": "Failed Sessions"
+          },
+          {
+            "name": "success_rate_pct",
+            "expr": "ROUND(SUM(completed_sessions) * 100.0 / NULLIF(SUM(completed_sessions) + SUM(failed_sessions), 0), 2)",
+            "displayName": "Success Rate %",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "revenue_leakage",
+            "expr": "SUM(billed_amount - amount_paid)",
+            "displayName": "Revenue Leakage",
+            "format": {
+              "type": "currency",
+              "currencyCode": "INR",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "total_billed",
+            "expr": "SUM(billed_amount)",
+            "displayName": "Total Billed",
+            "format": {
+              "type": "currency",
+              "currencyCode": "INR",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "total_paid",
+            "expr": "SUM(amount_paid)",
+            "displayName": "Total Paid",
+            "format": {
+              "type": "currency",
+              "currencyCode": "INR",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "93d17542",
+      "displayName": "dim_charger",
+      "config": {
+        "version": "1.1",
+        "source": "vp_rp20040126.gold.dim_charger",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "84115e94",
+      "displayName": "dim_date",
+      "config": {
+        "version": "1.1",
+        "source": "vp_rp20040126.gold.dim_date",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a6848865",
+      "displayName": "dim_member",
+      "config": {
+        "version": "1.1",
+        "source": "vp_rp20040126.gold.dim_member",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "e8784ac8",
+      "displayName": "dim_station",
+      "config": {
+        "version": "1.1",
+        "source": "vp_rp20040126.gold.dim_station",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "fact_sessions",
+      "displayName": "fact_sessions",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT f.session_id, f.date_key, f.charger_id, f.station_id, f.member_id, f.status,\n       f.time_band, f.energy_kwh, f.duration_minutes, f.idle_minutes, f.amount_paid,\n       f.member_sk, f.plan_at_session, f.rate_per_kwh, f.energy_charge,\n       f.plan_discount, f.idle_fee, f.billed_amount, f.billing_status, f.fault_count,\n       s.city, to_date(cast(f.date_key AS STRING), 'yyyyMMdd') AS session_date\nFROM vp_rp20040126.gold.fact_sessions f\nJOIN vp_rp20040126.gold.dim_station s ON f.station_id = s.station_id\n",
+        "dimensions": [
+          {
+            "name": "charger_id",
+            "expr": "charger_id"
+          },
+          {
+            "name": "station_id",
+            "expr": "station_id"
+          },
+          {
+            "name": "city",
+            "expr": "city"
+          },
+          {
+            "name": "session_date",
+            "expr": "session_date"
+          },
+          {
+            "name": "status",
+            "expr": "status"
+          },
+          {
+            "name": "plan_at_session",
+            "expr": "plan_at_session"
+          },
+          {
+            "name": "billing_status",
+            "expr": "billing_status"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          },
+          {
+            "name": "completed_sessions",
+            "expr": "COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END)",
+            "displayName": "Completed Sessions"
+          },
+          {
+            "name": "failed_sessions",
+            "expr": "COUNT(CASE WHEN status = 'FAILED' THEN 1 END)",
+            "displayName": "Failed Sessions"
+          },
+          {
+            "name": "failure_rate_pct",
+            "expr": "ROUND(COUNT(CASE WHEN status = 'FAILED' THEN 1 END) * 100.0 / NULLIF(COUNT(CASE WHEN status IN ('COMPLETED', 'FAILED') THEN 1 END), 0), 2)",
+            "displayName": "Failure Rate %",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "energy_kwh",
+            "expr": "SUM(energy_kwh)",
+            "displayName": "Energy (kWh)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 3.0
+              }
+            }
+          },
+          {
+            "name": "total_billed",
+            "expr": "SUM(billed_amount)",
+            "displayName": "Total Billed",
+            "format": {
+              "type": "currency",
+              "currencyCode": "INR",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "revenue_leakage",
+            "expr": "SUM(billed_amount - amount_paid)",
+            "displayName": "Revenue Leakage",
+            "format": {
+              "type": "currency",
+              "currencyCode": "INR",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "success_rate_pct",
+            "expr": "ROUND(COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2)",
+            "displayName": "Success Rate %",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "4d5c9aa2",
+      "displayName": "Operations Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "counter_energy",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "measure(total_energy_kwh)",
+                      "expression": "MEASURE(`total_energy_kwh`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Energy (kWh)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_energy_kwh)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_completed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "measure(total_completed)",
+                      "expression": "MEASURE(`total_completed`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Completed Sessions"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_completed)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_success",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "measure(success_rate_pct)",
+                      "expression": "MEASURE(`success_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Success Rate %"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(success_rate_pct)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_leakage",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "measure(revenue_leakage)",
+                      "expression": "MEASURE(`revenue_leakage`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue Leakage"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(revenue_leakage)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "line_daily_energy",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "session_date",
+                      "expression": "`session_date`"
+                    },
+                    {
+                      "name": "measure(total_energy_kwh)",
+                      "expression": "MEASURE(`total_energy_kwh`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Daily Energy (kWh)",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "session_date",
+                  "displayName": "Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_energy_kwh)",
+                  "displayName": "Energy (kWh)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 8,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_utilisation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "station_id",
+                      "expression": "`station_id`"
+                    },
+                    {
+                      "name": "avg(utilisation_pct)",
+                      "expression": "AVG(`utilisation_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Utilisation by Station"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "station_id",
+                  "displayName": "station_id",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(utilisation_pct)",
+                  "displayName": "utilisation_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "station_id",
+                  "displayName": "station_id",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "table_q04",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "fact_sessions",
+                  "fields": [
+                    {
+                      "name": "charger_id",
+                      "expression": "`charger_id`"
+                    },
+                    {
+                      "name": "measure(completed_sessions)",
+                      "expression": "MEASURE(`completed_sessions`)"
+                    },
+                    {
+                      "name": "measure(failed_sessions)",
+                      "expression": "MEASURE(`failed_sessions`)"
+                    },
+                    {
+                      "name": "measure(failure_rate_pct)",
+                      "expression": "MEASURE(`failure_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Charger Failures (Q04)"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "charger_id"
+                  },
+                  {
+                    "fieldName": "measure(completed_sessions)"
+                  },
+                  {
+                    "fieldName": "measure(failed_sessions)"
+                  },
+                  {
+                    "fieldName": "measure(failure_rate_pct)"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 4
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "city_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88d34191dd8a7e57a67de0ba2cd_city",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "city_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88eca9a1644af4bca476e3ec8ac_city",
+                "query": {
+                  "datasetName": "fact_sessions",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "city_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "City"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "city",
+                    "queryName": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88d34191dd8a7e57a67de0ba2cd_city"
+                  },
+                  {
+                    "fieldName": "city",
+                    "queryName": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88eca9a1644af4bca476e3ec8ac_city"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "date_range_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88d34191dd8a7e57a67de0ba2cd_session_date",
+                "query": {
+                  "datasetName": "4a134d1b",
+                  "fields": [
+                    {
+                      "name": "session_date",
+                      "expression": "`session_date`"
+                    },
+                    {
+                      "name": "session_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88eca9a1644af4bca476e3ec8ac_session_date",
+                "query": {
+                  "datasetName": "fact_sessions",
+                  "fields": [
+                    {
+                      "name": "session_date",
+                      "expression": "`session_date`"
+                    },
+                    {
+                      "name": "session_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Date Range"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "session_date",
+                    "queryName": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88d34191dd8a7e57a67de0ba2cd_session_date"
+                  },
+                  {
+                    "fieldName": "session_date",
+                    "queryName": "dashboards/01f1c88c9c251e68a59b2f7ca131da56/datasets/01f1c88eca9a1644af4bca476e3ec8ac_session_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 12,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

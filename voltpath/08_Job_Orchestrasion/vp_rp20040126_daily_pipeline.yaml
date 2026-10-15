@@ -1,0 +1,58 @@
+resources:
+  jobs:
+    vp_rp20040126_daily_pipeline:
+      name: vp_rp20040126_daily_pipeline
+      email_notifications:
+        on_failure:
+          - rahulpatel@cyntexa.com
+      notification_settings:
+        no_alert_for_canceled_runs: true
+      schedule:
+        quartz_cron_expression: 22 0 7 * * ?
+        timezone_id: Asia/Calcutta
+        pause_status: PAUSED
+      tasks:
+        - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Workspace/Users/rahulpatel@cyntexa.com/IAP_Practice/voltpath/01_bronze
+            source: WORKSPACE
+          max_retries: 1
+          min_retry_interval_millis: 1800000
+          retry_on_timeout: true
+          disable_auto_optimization: false
+          timeout_seconds: 1800
+        - task_key: silver_reference
+          depends_on:
+            - task_key: ingest_bronze
+          notebook_task:
+            notebook_path: /Workspace/Users/rahulpatel@cyntexa.com/IAP_Practice/voltpath/03_silver_references
+            source: WORKSPACE
+          max_retries: 1
+          min_retry_interval_millis: 1800000
+          retry_on_timeout: true
+          disable_auto_optimization: false
+        - task_key: silver_sessions
+          depends_on:
+            - task_key: silver_reference
+          notebook_task:
+            notebook_path: /Workspace/Users/rahulpatel@cyntexa.com/IAP_Practice/voltpath/02_silver_session
+            source: WORKSPACE
+          min_retry_interval_millis: 1800000
+          retry_on_timeout: true
+          disable_auto_optimization: false
+        - task_key: gold_build
+          depends_on:
+            - task_key: silver_sessions
+          notebook_task:
+            notebook_path: /Workspace/Users/rahulpatel@cyntexa.com/IAP_Practice/voltpath/04_gold
+            source: WORKSPACE
+          max_retries: 1
+          min_retry_interval_millis: 1800000
+          retry_on_timeout: true
+          disable_auto_optimization: false
+      queue:
+        enabled: true
+      parameters:
+        - name: catalog
+          default: vp_rp20040126
+      performance_target: PERFORMANCE_OPTIMIZED
