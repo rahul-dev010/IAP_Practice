@@ -1,0 +1,1424 @@
+{
+  "datasets": [
+    {
+      "name": "390b44ac",
+      "displayName": "dim_airline",
+      "config": {
+        "version": "1.1",
+        "source": "WITH top5 AS (\n    SELECT f.airline_id\n    FROM tpca.gold.fact_bookings f\n    GROUP BY f.airline_id\n    ORDER BY SUM(f.ticket_price * (1 - f.discount)) DESC\n    LIMIT 5\n) SELECT\n    a.al_airlineid,\n    a.al_name,\n    a.al_nationkey,\n    CASE WHEN a.al_airlineid IN (SELECT airline_id FROM top5)\n         THEN a.al_name\n         ELSE 'REST (other airlines)'\n    END AS airline_group\nFROM tpca.gold.dim_airline a",
+        "dimensions": [
+          {
+            "name": "al_airlineid",
+            "expr": "al_airlineid",
+            "comment": "Airline key"
+          },
+          {
+            "name": "al_name",
+            "expr": "al_name",
+            "comment": "Airline name"
+          },
+          {
+            "name": "al_nationkey",
+            "expr": "al_nationkey",
+            "comment": "Airline home nation key"
+          },
+          {
+            "name": "airline_group",
+            "expr": "airline_group",
+            "comment": "Top-5 revenue airlines shown individually, all others grouped as REST"
+          }
+        ]
+      }
+    },
+    {
+      "name": "599f9a01",
+      "displayName": "dim_geography",
+      "config": {
+        "version": "1.1",
+        "source": "tpca.gold.dim_geography",
+        "dimensions": [
+          {
+            "name": "n_nationkey",
+            "expr": "n_nationkey",
+            "comment": "Nation key"
+          },
+          {
+            "name": "nation_name",
+            "expr": "nation_name",
+            "comment": "Nation name"
+          },
+          {
+            "name": "region_name",
+            "expr": "region_name",
+            "comment": "Region name"
+          }
+        ]
+      }
+    },
+    {
+      "name": "da411ff3",
+      "displayName": "dim_passenger",
+      "config": {
+        "version": "1.1",
+        "source": "tpca.gold.dim_passenger",
+        "dimensions": [
+          {
+            "name": "pa_passengerid",
+            "expr": "pa_passengerid",
+            "comment": "Passenger key"
+          },
+          {
+            "name": "pa_name",
+            "expr": "pa_name",
+            "comment": "Passenger name"
+          },
+          {
+            "name": "passenger_label",
+            "expr": "CONCAT(pa_name, ' (', pa_passengerid, ')')",
+            "comment": "Unique passenger display label (name + id, names are not unique)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2727b538",
+      "displayName": "dim_route",
+      "config": {
+        "version": "1.1",
+        "source": "tpca.gold.dim_route",
+        "dimensions": [
+          {
+            "name": "ro_routeid",
+            "expr": "ro_routeid",
+            "comment": "Route key"
+          },
+          {
+            "name": "ro_name",
+            "expr": "ro_name",
+            "comment": "Route name (origin-destination)"
+          },
+          {
+            "name": "route_label",
+            "expr": "CONCAT(ro_name, ' (', ro_routeid, ')')",
+            "comment": "Unique route display label (name + id, names are not unique)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "852c3221",
+      "displayName": "fact_bookings",
+      "config": {
+        "version": "1.1",
+        "source": "tpca.gold.fact_bookings",
+        "dimensions": [
+          {
+            "name": "booking_id",
+            "expr": "booking_id",
+            "comment": "Booking key"
+          },
+          {
+            "name": "passenger_id",
+            "expr": "passenger_id",
+            "comment": "Passenger foreign key"
+          },
+          {
+            "name": "passenger_nation_key",
+            "expr": "passenger_nation_key",
+            "comment": "Passenger nation foreign key"
+          },
+          {
+            "name": "route_id",
+            "expr": "route_id",
+            "comment": "Route foreign key"
+          },
+          {
+            "name": "airline_id",
+            "expr": "airline_id",
+            "comment": "Airline foreign key"
+          },
+          {
+            "name": "booking_date",
+            "expr": "booking_date",
+            "comment": "Date the booking was made",
+            "format": {
+              "type": "date",
+              "dateFormat": "year_month_day"
+            }
+          },
+          {
+            "name": "travel_purpose",
+            "expr": "travel_purpose",
+            "comment": "Purpose of travel"
+          },
+          {
+            "name": "cabin_class",
+            "expr": "cabin_class",
+            "comment": "Cabin class booked"
+          }
+        ],
+        "measures": [
+          {
+            "name": "net_revenue",
+            "expr": "SUM(net_amount)",
+            "comment": "Net revenue after discount",
+            "format": {
+              "type": "currency",
+              "currencyCode": "USD",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              },
+              "abbreviation": "compact"
+            }
+          },
+          {
+            "name": "distinct_bookings",
+            "expr": "COUNT(DISTINCT booking_id)",
+            "comment": "Distinct bookings"
+          },
+          {
+            "name": "active_passengers",
+            "expr": "COUNT(DISTINCT passenger_id)",
+            "comment": "Distinct passengers"
+          },
+          {
+            "name": "avg_booking_value",
+            "expr": "SUM(net_amount) / COUNT(DISTINCT booking_id)",
+            "comment": "Average net revenue per booking",
+            "format": {
+              "type": "currency",
+              "currencyCode": "USD",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "avg_discount",
+            "expr": "AVG(discount)",
+            "comment": "Average discount rate",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "avg_flight_duration_days",
+            "expr": "AVG(DATEDIFF(arrival_date, departure_date))",
+            "comment": "Average days between departure and arrival",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 1.0
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "relationshipGraphs": [
+    {
+      "sources": [
+        {
+          "name": "dim_airline",
+          "datasetName": "390b44ac"
+        },
+        {
+          "name": "dim_geography",
+          "datasetName": "599f9a01"
+        },
+        {
+          "name": "dim_passenger",
+          "datasetName": "da411ff3"
+        },
+        {
+          "name": "dim_route",
+          "datasetName": "2727b538"
+        },
+        {
+          "name": "fact_bookings",
+          "datasetName": "852c3221"
+        }
+      ],
+      "relationships": [
+        {
+          "name": "relationship_0",
+          "from": "fact_bookings",
+          "to": "dim_passenger",
+          "on": "`fact_bookings`.`passenger_id` = `dim_passenger`.`pa_passengerid`",
+          "cardinality": "CARDINALITY_MANY_TO_ONE"
+        },
+        {
+          "name": "relationship_1",
+          "from": "fact_bookings",
+          "to": "dim_route",
+          "on": "`fact_bookings`.`route_id` = `dim_route`.`ro_routeid`",
+          "cardinality": "CARDINALITY_MANY_TO_ONE"
+        },
+        {
+          "name": "relationship_2",
+          "from": "fact_bookings",
+          "to": "dim_airline",
+          "on": "`fact_bookings`.`airline_id` = `dim_airline`.`al_airlineid`",
+          "cardinality": "CARDINALITY_MANY_TO_ONE"
+        },
+        {
+          "name": "relationship_3",
+          "from": "fact_bookings",
+          "to": "dim_geography",
+          "on": "`fact_bookings`.`passenger_nation_key` = `dim_geography`.`n_nationkey`",
+          "cardinality": "CARDINALITY_MANY_TO_ONE"
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "0d88395a",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "header",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Executive Overview — How is SkyLeader's booking business performing overall?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_net_revenue",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Net Revenue"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_distinct_bookings",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(fact_bookings__distinct_bookings)",
+                      "expression": "MEASURE(`fact_bookings`.`distinct_bookings`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Bookings"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(fact_bookings__distinct_bookings)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_active_passengers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(fact_bookings__active_passengers)",
+                      "expression": "MEASURE(`fact_bookings`.`active_passengers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Active Passengers"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(fact_bookings__active_passengers)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_avg_booking_value",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(fact_bookings__avg_booking_value)",
+                      "expression": "MEASURE(`fact_bookings`.`avg_booking_value`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Booking Value"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(fact_bookings__avg_booking_value)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_revenue_trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "monthly(fact_bookings__booking_date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `fact_bookings`.`booking_date`)"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue Trend Over Time"
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(fact_bookings__booking_date)",
+                  "displayName": "Booking Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 8,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_revenue_by_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_geography__region_name",
+                      "expression": "`dim_geography`.`region_name`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue by Passenger Region"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_geography__region_name",
+                  "displayName": "Passenger Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_geography__region_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_top10_passengers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_passenger__passenger_label",
+                      "expression": "`dim_passenger`.`passenger_label`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Passengers by Revenue"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_passenger__passenger_label",
+                  "displayName": "Passenger",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "measure(fact_bookings__net_revenue)"
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_passenger__passenger_label",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "passenger_route_analysis",
+      "displayName": "Passenger & Route Analysis",
+      "layout": [
+        {
+          "widget": {
+            "name": "header",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Passenger & Route Analysis — passenger and route performance"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_revenue_by_purpose",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "fact_bookings__travel_purpose",
+                      "expression": "`fact_bookings`.`travel_purpose`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue by Travel Purpose"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "fact_bookings__travel_purpose",
+                  "displayName": "Travel Purpose",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "fact_bookings__travel_purpose",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_top10_routes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_route__route_label",
+                      "expression": "`dim_route`.`route_label`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Routes by Revenue"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_route__route_label",
+                  "displayName": "Route",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "measure(fact_bookings__net_revenue)"
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_route__route_label",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_bottom10_routes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_route__route_label",
+                      "expression": "`dim_route`.`route_label`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Bottom 10 Routes by Revenue"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_route__route_label",
+                  "displayName": "Route",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure",
+                      "measure": {
+                        "fieldName": "measure(fact_bookings__net_revenue)"
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_route__route_label",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_avg_discount_by_purpose",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "fact_bookings__travel_purpose",
+                      "expression": "`fact_bookings`.`travel_purpose`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__avg_discount)",
+                      "expression": "MEASURE(`fact_bookings`.`avg_discount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Discount by Travel Purpose"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "fact_bookings__travel_purpose",
+                  "displayName": "Travel Purpose",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__avg_discount)",
+                  "displayName": "Avg Discount",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "fact_bookings__travel_purpose",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "airline_supply_chain",
+      "displayName": "Airline & Supply Chain Analytics",
+      "layout": [
+        {
+          "widget": {
+            "name": "header",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Airline & Supply Chain Analytics — airline and geography strengths and risks"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_top10_airlines",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_airline__al_name",
+                      "expression": "`dim_airline`.`al_name`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Airlines by Revenue"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_airline__al_name",
+                  "displayName": "Airline",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "measure(fact_bookings__net_revenue)"
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_airline__al_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_revenue_by_nation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "dim_geography__nation_name",
+                      "expression": "`dim_geography`.`nation_name`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue by Passenger Nation"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dim_geography__nation_name",
+                  "displayName": "Nation",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "measure(fact_bookings__net_revenue)"
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "displayName": "Net Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_geography__nation_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_duration_by_cabin",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "fact_bookings__cabin_class",
+                      "expression": "`fact_bookings`.`cabin_class`"
+                    },
+                    {
+                      "name": "measure(fact_bookings__avg_flight_duration_days)",
+                      "expression": "MEASURE(`fact_bookings`.`avg_flight_duration_days`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Flight Duration by Cabin Class"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "fact_bookings__cabin_class",
+                  "displayName": "Cabin Class",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(fact_bookings__avg_flight_duration_days)",
+                  "displayName": "Avg Duration (days)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "fact_bookings__cabin_class",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart_airline_concentration",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(fact_bookings__net_revenue)",
+                      "expression": "MEASURE(`fact_bookings`.`net_revenue`)"
+                    },
+                    {
+                      "name": "dim_airline__airline_group",
+                      "expression": "`dim_airline`.`airline_group`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Airline Revenue Concentration: Top 5 vs Rest"
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "measure(fact_bookings__net_revenue)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "dim_airline__airline_group",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "9e1d50d6",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter_booking_date",
+            "queries": [
+              {
+                "name": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af2971f8fa0c23b3da18542ed_booking_date",
+                "query": {
+                  "datasetName": "852c3221",
+                  "fields": [
+                    {
+                      "name": "booking_date",
+                      "expression": "`booking_date`"
+                    },
+                    {
+                      "name": "booking_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Booking Date Range"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "booking_date",
+                    "queryName": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af2971f8fa0c23b3da18542ed_booking_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_passenger_region",
+            "queries": [
+              {
+                "name": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af1c61678b7adca468306f758_region_name",
+                "query": {
+                  "datasetName": "599f9a01",
+                  "fields": [
+                    {
+                      "name": "region_name",
+                      "expression": "`region_name`"
+                    },
+                    {
+                      "name": "region_name_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Passenger Region"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "region_name",
+                    "queryName": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af1c61678b7adca468306f758_region_name"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_travel_purpose",
+            "queries": [
+              {
+                "name": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af2971f8fa0c23b3da18542ed_travel_purpose",
+                "query": {
+                  "datasetName": "852c3221",
+                  "fields": [
+                    {
+                      "name": "travel_purpose",
+                      "expression": "`travel_purpose`"
+                    },
+                    {
+                      "name": "travel_purpose_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Travel Purpose"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "travel_purpose",
+                    "queryName": "dashboards/01f1cc7ae3d0145dba39927d1072f6f2/datasets/01f1cc7af2971f8fa0c23b3da18542ed_travel_purpose"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
